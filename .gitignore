@@ -1,0 +1,5 @@
+*.pyc
+MANIFEST
+dist/
+yunobuiltin.egg-info/
+docs/build/*
