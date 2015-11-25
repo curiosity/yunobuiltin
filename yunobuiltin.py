@@ -1,4 +1,5 @@
-from collections import Mapping as __Mapping, Sequence as __Sequence
+from collections import (Iterable as __Iterable, Mapping as __Mapping,
+                         Sequence as __Sequence)
 # utility functions that should be builtins
 
 # we import * this namespace, so might as well
@@ -141,8 +142,7 @@ def update_in(obj, keys, fn, *args, **kwargs):
 
 def is_iterable(obj):
     """ True if obj is iterable """
-    from collections import Iterable
-    return isinstance(obj, Iterable)
+    return isinstance(obj, __Iterable)
 
 
 def dissoc(obj, k):
