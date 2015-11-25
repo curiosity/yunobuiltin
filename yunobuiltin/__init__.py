@@ -10,18 +10,14 @@ from operator import (attrgetter as aget,       # NOQA
                       methodcaller as mcall, )  # NOQA
 
 
-class __nil(object):
-    """ Implementation detail to make merge_with a little safer. """
-    pass
-
-
 def merge_with(f, *dicts):
     """ Merges dicts using f(old, new) when encountering collision. """
     r = {}
+    sentinel = object()
     for d in filter(None, dicts):
         for k, v in d.iteritems():
-            tmp = r.get(k, __nil())
-            if isinstance(tmp, __nil):
+            tmp = r.get(k, sentinel)
+            if tmp is sentinel:
                 r[k] = v
             else:
                 r[k] = f(tmp, v)
