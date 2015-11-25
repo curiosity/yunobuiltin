@@ -22,7 +22,7 @@ upload: sdist
 	python setup.py upload
 
 test:
-	nosetests tests/
+	nosetests tests/*
 
 install:
 	pip install -e .
