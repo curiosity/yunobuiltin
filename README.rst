@@ -50,10 +50,12 @@ Please include a test.
 Don't break API compatibility. I'll be sad. I'll have to reject your change, then you'll be sad.
 Keep the world a happier place and don't break API compatibility.
 
+.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
+
 License (MIT/Expat)
 ====================
 
-(c) 2014, 2015 Beacon Solutions, Inc. 
+Copyright |copy| 2014, 2015 Beacon Solutions, Inc. 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
