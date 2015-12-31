@@ -11,6 +11,20 @@ from operator import (attrgetter as aget,       # NOQA
                       methodcaller as mcall, )  # NOQA
 
 
+def interleave(*args):
+    """ Takes any number of iterables and interleaves them in a generator. """
+    iterators = [iter(x) for x in args]
+    while iterators:
+        for i, x in enumerate(iterators):
+            try:
+                yield x.next()
+            except StopIteration:
+                try:
+                    iterators.pop(i)
+                except IndexError:
+                    break
+
+
 def merge_with(f, *dicts):
     """ Merges dicts using f(old, new) when encountering collision. """
     r = {}
