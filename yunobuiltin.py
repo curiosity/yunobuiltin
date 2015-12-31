@@ -194,11 +194,13 @@ def select_keys(keys, d, default=None):
     return r
 
 
-def select_keys_flat(keys, d, default=None):
+def select_vals(keys, d, default=None):
     """ Given a list of keys and a collection that supports __getitem__, return
        a list with those keys. """
     return [get(d, k, default) for k in keys]
 
+
+select_keys_flat = select_vals
 
 def identity(x):
     """ Identity functions x -> x """
