@@ -265,20 +265,20 @@ def prepend(v, l):
 
 cons = prepend
 
-
-def append(l, v):
-    """ Given an iterable or a  list, append a value to it.
+def append(l, *vs):
+    """ Given an iterable or a list, append values to it.
 
     Returns a concrete list if given a list, otherwise a generator.
     """
     if isinstance(l, list):
-        l.append(v)
+        l.extend(vs)
         return l
     else:
         def generator():
             for x in l:
                 yield x
-            yield v
+            for v in vs:
+                yield v
         return generator()
 
 conj = append
