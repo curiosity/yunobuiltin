@@ -159,16 +159,16 @@ def is_iterable(obj):
     return isinstance(obj, __Iterable)
 
 
-def dissoc(obj, k):
+def dissoc(obj, *ks):
     """ Return a copy of obj without k """
     from copy import deepcopy
     obj = deepcopy(obj)
-    try:
-        del obj[k]
-    except (KeyError, IndexError):
-        pass
+    for k in ks:
+        try:
+            del obj[k]
+        except (KeyError, IndexError):
+            pass
     return obj
-
 
 def dissoc_in(obj, keys):
     """ Return a copy of obj without k at keys. """
