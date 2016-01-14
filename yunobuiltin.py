@@ -214,7 +214,29 @@ def is_even(x):
 
 
 def assoc(obj, *args):
-    """Return a copy of obj with k1=v1... via __setitem__.
+    """Return obj with k1=v1... via __setitem__.
+
+    Expects *args as k1, v1, k2, v2 ...
+
+    Special-cases None to return {k: v} ala Clojure.
+    """
+    # requires even count of *args
+    if not is_even(len(args)):
+        raise ValueError("*args count must be even")
+
+    # special case None to work like empty dict
+    if obj is None:
+        obj = {}
+
+    # iterate args as key value pairs
+    for k, v in zip(args[::2], args[1::2]):
+        obj[k] = v
+
+    return obj
+
+
+def assoc_deep(obj, *args):
+    """Return a deep copy of obj with k1=v1... via __setitem__.
 
     Expects *args as k1, v1, k2, v2 ...
 
@@ -240,7 +262,19 @@ def assoc(obj, *args):
 
 
 def assoc_kw(obj, **kwargs):
-    """ Copy obj and __setitem__ all kwargs on the new object, return it. """
+    """ __setitem__ all kwargs on the new object, return it. """
+    # special case None to work like empty dict
+    if obj is None:
+        obj = {}
+
+    for k, v in kwargs.items():
+        obj[k] = v
+
+    return obj
+
+
+def assoc_deep_kw(obj, **kwargs):
+    """ Deep Copy obj and __setitem__ all kwargs on the new object, return it. """
     from copy import deepcopy
 
     # special case None to work like empty dict
@@ -266,8 +300,19 @@ def assoc_in(obj, keys, v):
     return assoc(obj, k, v)
 
 
+def assoc_deep_in(obj, keys, v):
+    """ Return a copy of obj with v updated at keys.
+
+    Dictionaries are created when keys don't exist.
+    """
+    k, ks = keys[0], keys[1:]
+    if ks:
+        return assoc_deep(obj, k, assoc_deep_in(get(obj, k), ks, v))
+    return assoc_deep(obj, k, v)
+
+
 def update_in(obj, keys, fn, *args, **kwargs):
-    """ Return a copy of obj with v updated by
+    """ Return obj with v updated by
         fn(current_value, *args, **kwargs) at keys.
 
     Dictionaries are created when keys don't exist.
@@ -282,12 +327,38 @@ def update_in(obj, keys, fn, *args, **kwargs):
     return assoc(obj, k, fn(get(obj, k), *args, **kwargs))
 
 
+def update_deep_in(obj, keys, fn, *args, **kwargs):
+    """ Return a copy of obj with v updated by
+        fn(current_value, *args, **kwargs) at keys.
+
+    Dictionaries are created when keys don't exist.
+    """
+    k, ks = keys[0], keys[1:]
+    if ks:
+        return assoc_deep(obj, k, update_deep_in(get(obj, k),
+                                                 ks,
+                                                 fn,
+                                                 *args,
+                                                 **kwargs))
+    return assoc_deep(obj, k, fn(get(obj, k), *args, **kwargs))
+
+
 def is_iterable(obj):
     """ True if obj is iterable """
     return isinstance(obj, __Iterable)
 
 
 def dissoc(obj, *ks):
+    """ Return obj without k """
+    for k in ks:
+        try:
+            del obj[k]
+        except (KeyError, IndexError):
+            pass
+    return obj
+
+
+def dissoc_deep(obj, *ks):
     """ Return a copy of obj without k """
     from copy import deepcopy
     obj = deepcopy(obj)
@@ -298,7 +369,22 @@ def dissoc(obj, *ks):
             pass
     return obj
 
+
 def dissoc_in(obj, keys):
+    """ Return obj without k at keys. """
+    k, ks = keys[0], keys[1:]
+    if ks:
+        nextmap = get(obj, k)
+        if nextmap is not None:
+            newmap = dissoc_in(nextmap, ks)
+            if is_iterable(obj):
+                return assoc(obj, k, newmap)
+            return dissoc(obj, k)
+        return obj
+    return dissoc(obj, k)
+
+
+def dissoc_deep_in(obj, keys):
     """ Return a copy of obj without k at keys. """
     k, ks = keys[0], keys[1:]
     if ks:
@@ -329,6 +415,7 @@ def select_vals(keys, d, default=None):
 
 
 select_keys_flat = select_vals
+
 
 def identity(x):
     """ Identity functions x -> x """
