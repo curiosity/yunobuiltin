@@ -1,5 +1,5 @@
 from collections import (Iterable as __Iterable, Mapping as __Mapping,
-                         Sequence as __Sequence)
+                         Sequence as __Sequence, )
 # utility functions that should be builtins
 
 # we import * this namespace, so might as well
@@ -9,6 +9,134 @@ from functools import partial                   # NOQA
 from operator import (attrgetter as aget,       # NOQA
                       itemgetter as iget,       # NOQA
                       methodcaller as mcall, )  # NOQA
+
+
+def gensym():
+    "Generates a unique symbol that is a valid python identifier"
+    from uuid import uuid4
+    return str(uuid4()).replace('-', '_')
+
+
+def isa(value, target):
+    "True if value is a target via ==, issubclass, or isinstance"
+    # equality
+    if value == target:
+        return True
+
+    # instance vs type
+    if issubclass(type(value), type):
+        if issubclass(type(target), type):
+            return issubclass(value, target)
+        else:
+            return False
+    else:
+        if issubclass(type(target), type):
+            return isinstance(value, target)
+        return False
+
+
+class MultiFn(object):
+    def __init__(self, dispatch):
+        self.dispatch = dispatch
+        self.dispatch_alist = []
+        self.dispatch_prefers = []
+        self.default_func = None
+
+    def __call__(self, *args, **kwargs):
+        value = self.dispatch(*args, **kwargs)
+        return self.invoke(value, args, kwargs)
+
+    def invoke(self, value, args, kwargs):
+        "Invoke the appropriate function from dispatch_alist for value"
+
+        # handle registered preferences
+        def do_maybe_preferred(target, func):
+            preferred = self.prefers_over(target)
+            if preferred is not None:
+                return self.invoke(preferred, args, kwargs)
+            else:
+                return func(*args, **kwargs)
+
+        # equality
+        for target, func in self.dispatch_alist:
+            if value == target:
+                return do_maybe_preferred(target, func)
+
+        # inheritance
+        for target, func in self.dispatch_alist:
+            if isa(value, target):
+                return do_maybe_preferred(target, func)
+
+        # default to default_func or throwing if default_func isn't setup
+        if self.default_func is not None:
+            return self.default_func(*args, **kwargs)
+        else:
+            raise Exception("No default value provided!")
+
+    def register_method(self, target, f):
+        "Helper to register a new method for a given dispatch target"
+        # make sure we unregister any other methods of the same target
+        self.unregister_method(target)
+        # register the new method in the assoc list
+        self.dispatch_alist.append((target, f))
+
+    def method(self, target):
+        "Decorator to register a new method for a dispatch target"
+        def decorator(f):
+            self.register_method(target, f)
+            return f
+        return decorator
+
+    def register_default(self, f):
+        "Helper to registers the default function"
+        self.default_func = f
+
+    def default(self, f):
+        "Decorator to register the default method"
+        self.register_default(f)
+        return f
+
+    def unregister_method(self, target):
+        "Unregisters a dispatch target"
+        # remove target from dispatch_alist
+        self.dispatch_alist = [x for x in self.dispatch_alist if x[0] != target]
+        # remove target from dispatch_prefers
+        self.dispatch_prefers = [x for x in self.dispatch_prefers if target not in x]
+
+    def unregister_default(self):
+        "Unregisters the default method"
+        self.default_method = None
+
+    def prefers_over(self, target):
+        "Returns a class that is preferred over target or None"
+        for c1, c2 in self.dispatch_prefers:
+            if target == c2:
+                return c1
+
+    def prefer(self, class1, class2):
+        "Prefers class1 over class2"
+        if class1 == class2:
+            raise ValueError('class1 cannot == class2')
+        # search for class1 and class2 in dispatch_alist
+        p1 = False
+        p2 = False
+        for t, _ in self.dispatch_alist:
+            if t == class1:
+                p1 = True
+            elif t == class2:
+                p2 = True
+            if p1 and p2:
+                break
+        if not p1:
+            raise ValueError('class1 is not registered!')
+        if not p2:
+            raise ValueError('class2 is not registered!')
+        # register the preference
+        self.dispatch_prefers.append((class1, class2))
+
+    def stop_prefer(self, class1, class2):
+        p = (class1, class2)
+        self.dispatch_prefers = [x for x in self.dispatch_prefers if x != p]
 
 
 def interleave(*args):
