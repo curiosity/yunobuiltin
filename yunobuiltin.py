@@ -626,3 +626,108 @@ def transform_tree(f, t):
         nk, nv = f(k, transform_tree(f, v))
         d[nk] = nv
     return d
+
+
+class Reduced(BaseException):
+    """ Used to escape from better_reduce-based iteration, returning
+    the passed val immediately.
+
+    Inherits from BaseException so normal Exception catches won't accidentally
+    catch this.
+    """
+    def __init__(self, val):
+        self.val = val
+
+    def __str__(self):
+        return "<Reduced: {}>".format(val)
+
+
+def reduced(v):
+    """ Aborts execution of a better_reduce or better_map and returns then
+    passed value immediately. """
+    raise Reduced(v)
+
+
+def better_reduce(f, *xs):
+    """ A multi-arity reduce, with initial value being first supporting reduced.
+
+    Supports reduced(val) in the reducer function to return val immediately
+    without further processing.
+
+    If no initial value is given `better_reduce(f, coll)`, then
+    the collection must contain at least 2 values, which will be
+    passed into f to form the initial value.
+
+    If more than one collection is passed, an initial value must
+    be given. Each collection is combined lazily, using izip_longest
+    with a fill value of None. This means that your reducing function
+    should expect an iterable as the second argument. This iterable
+    might contain None as values if the collections are not of equal
+    length.
+    """
+    from itertools import izip_longest
+
+    l = len(xs)
+
+    if l == 0:
+        raise Exception("No iterable passed!")
+
+    elif l == 1:
+
+        coll = iter(xs[0])
+        try:
+            x = next(coll)
+            y = next(coll)
+        except StopIteration:
+            raise Exception("No initial value passed and not at least 2 vals in coll")
+
+        try:
+            init = f(x, y)
+        except Reduced, r:
+            return r.val
+
+        try:
+            return reduce(f, coll, init)
+        except Reduced, r:
+            return r.val
+
+    elif l == 2:
+        init = xs[0]
+        coll = xs[1]
+
+        try:
+            return reduce(f, coll, init)
+        except Reduced, r:
+            return r.val
+
+    else:
+        init = xs[0]
+        colls = izip_longest(*xs[1:])
+
+        try:
+            return reduce(f, colls, init)
+        except Reduced, r:
+            return r.val
+
+
+def better_map(f, *colls):
+    "Higher arity version of map implemented via better_reduce"
+    def mapper(r, xs):
+        return conj(r, f(*xs))
+    return better_reduce(mapper, [], *colls)
+
+
+def new_list(*xs):
+    """ Constructor for lists with values passed as varargs"""
+    return list(xs)
+
+
+def new_iter(*xs):
+    """ Builds a new iterator for values passed as varargs using a generator"""
+    for x in xs:
+        yield x
+
+
+def new_tuple(*xs):
+    """ Constructor for tuples with values passed as varargs"""
+    return xs
