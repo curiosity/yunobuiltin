@@ -474,8 +474,11 @@ def prepend(v, l):
     else:
         def generator():
             yield v
-            for x in l:
-                yield x
+            try:
+                for x in l:
+                    yield x
+            except TypeError:
+                pass
         return generator()
 
 cons = prepend
@@ -490,10 +493,16 @@ def append(l, *vs):
         return l
     else:
         def generator():
-            for x in l:
-                yield x
-            for v in vs:
-                yield v
+            try:
+                for x in l:
+                    yield x
+            except TypeError:
+                pass
+            try:
+                for v in vs:
+                    yield v
+            except TypeError:
+                pass
         return generator()
 
 conj = append
