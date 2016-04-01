@@ -466,6 +466,8 @@ def prepend(v, l):
     """ Given a value, prepend it to an iterable or a list
 
     Returns a concrete list if given a list and a generator otherwise.
+
+    Ignores None as l
     """
     if isinstance(v, list):
         tmp = [v]
@@ -487,6 +489,8 @@ def append(l, *vs):
     """ Given an iterable or a list, append values to it.
 
     Returns a concrete list if given a list, otherwise a generator.
+
+    Ignores None as l
     """
     if isinstance(l, list):
         l.extend(vs)
@@ -498,17 +502,18 @@ def append(l, *vs):
                     yield x
             except TypeError:
                 pass
-            try:
-                for v in vs:
-                    yield v
-            except TypeError:
-                pass
+            for v in vs:
+                yield v
         return generator()
 
 conj = append
 
 
 def concat(*items):
+    """ Expands iterable items (via iteration, this means keys for dicts!)
+
+    Returns a generator
+    """
     for item in items:
         if is_iterable(item) and not is_str_or_bytes(item):
             for x in item:
@@ -517,6 +522,7 @@ def concat(*items):
             yield item
 
 flatten1 = compose(list, concat)
+flatten1.__doc__ = "Expands iterable items (via iteration, this means keys for dicts) into a concrete list"
 
 
 def if_let(expression, if_callable, else_callable=None):
@@ -731,3 +737,10 @@ def new_iter(*xs):
 def new_tuple(*xs):
     """ Constructor for tuples with values passed as varargs"""
     return xs
+
+
+def juxt(*funcs):
+    """ Returns a function that juxtposes values onto the passed functions. """
+    def juxt_wrapper(*args, **kwargs):
+        return [f(*args, **kwargs) for f in funcs]
+    return juxt_wrapper
