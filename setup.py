@@ -5,7 +5,7 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
-version = '1.0.0-rc1'
+version = '1.0.0'
 
 setup(name='yunobuiltin',
       version=version,
