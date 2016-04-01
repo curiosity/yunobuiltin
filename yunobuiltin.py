@@ -744,3 +744,6 @@ def juxt(*funcs):
     def juxt_wrapper(*args, **kwargs):
         return [f(*args, **kwargs) for f in funcs]
     return juxt_wrapper
+
+merge_keep_left = partial(merge_with, lambda x, y: x)
+merge_keep_right = partial(merge_with, lambda x, y: y)
